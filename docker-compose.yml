@@ -1,0 +1,62 @@
+version: "3.9"
+
+services:
+  config-server:
+    build:
+      context: ./config-server
+    image: sb-resilience-config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_PROFILES_ACTIVE=native
+    networks:
+      - sb-resilience-net
+
+  discovery-service:
+    build:
+      context: ./discovery-service
+    image: sb-resilience-discovery
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    depends_on:
+      - config-server
+    networks:
+      - sb-resilience-net
+
+  product-service:
+    build:
+      context: ./product-service
+    image: sb-resilience-product
+    container_name: product-service
+    ports:
+      - "9001:9001"
+    depends_on:
+      - discovery-service
+    environment:
+      # Override localhost with container name for Eureka
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+    networks:
+      - sb-resilience-net
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    image: sb-resilience-api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - product-service
+      - discovery-service
+    environment:
+      # Override localhost with container name for Eureka
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-service:8761/eureka/
+    networks:
+      - sb-resilience-net
+
+networks:
+  sb-resilience-net:
+    driver: bridge
+

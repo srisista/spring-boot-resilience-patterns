@@ -1,0 +1,48 @@
+server:
+  port: 9001
+
+spring:
+  application:
+    name: product-service
+  cache:
+    type: simple
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      productService:
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+  retry:
+    instances:
+      productService:
+        maxAttempts: 3
+        waitDuration: 500ms
+  ratelimiter:
+    instances:
+      productService:
+        limitForPeriod: 5
+        limitRefreshPeriod: 1s
+        timeoutDuration: 0
+
+logging:
+  level:
+    io.github.resilience4j: DEBUG
+
+management.tracing:
+  sampling:
+    probability: 1.0
+
